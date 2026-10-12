@@ -5,14 +5,14 @@
 		<title>Spherical Environment Mapping (MatCap/LitSphere)</title>
 		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 		
-		<meta property="og:url" content="http://www.clicktorelease.com/code/spherical-normal-mapping"/>
+		<meta property="og:url" content="https://spite.github.io/spherical-environment-mapping/"/>
 		<meta property="og:title" content="Spherical Environment Mapping (MatCap/LitSphere)"/> 
-		<meta property="og:description" content=""/> 
-		<meta property="og:image" content="http://www.clicktorelease.com/code/spherical-normal-mapping/thumb.jpg"/> 
-		<meta name="description" content="">
+		<meta property="og:description" content="Example of Spherical Environment Mapping (SEM) on different meshes and materials."/> 
+		<meta property="og:image" content="https://spite.github.io/spherical-environment-mapping/thumb.jpg"/> 
+		<meta name="description" content="Example of Spherical Environment Mapping (SEM) on different meshes and materials.">
 		<meta itemprop="name" content="Spherical Environment Mapping (MatCap/LitSphere)">
-		<meta itemprop="description" content="">
-		<meta itemprop="image" content="http://www.clicktorelease.com/code/spherical-normal-mapping/thumb.jpg">
+		<meta itemprop="description" content="Example of Spherical Environment Mapping (SEM) on different meshes and materials.">
+		<meta itemprop="image" content="https://spite.github.io/spherical-environment-mapping/thumb.jpg">
 
 		<style>
 			*{ box-sizing: border-box; -moz-box-sizing: border-box; margin: 0; padding: 0 }
@@ -60,15 +60,15 @@
 			}
 
 		</style>
-		<link href='http://fonts.googleapis.com/css?family=Roboto+Condensed:400,700,300' rel='stylesheet' type='text/css'>
+		<link href='https://fonts.googleapis.com/css?family=Roboto+Condensed:400,700,300' rel='stylesheet' type='text/css'>
 	</head>
 	<body>
 		<div id="container" ></div>
 		<div id="title" class="ui">
 			<h1>Spherical Environment Mapping <a href="#" id="fullscreenBtn">[↑]</a></h1>
 			<p>Example of Spherical Environment Mapping (<b>SEM</b>) on different meshes and materials.<br/><b>Click and drag</b> to rotate, <b>mousewheel</b> to zoom in and out. Try the options<br/>on the right to <b>change</b> mesh, material and shading interpolation.</p>
-			<p>Check out this more complex example using SEM and bump mapping:<br/><a href="http://www.clicktorelease.com/code/spherical-normal-mapping">Spherical Environment Mapping (MatCap/LitSphere) and Normal Mapping</a></p>
-			<p><a href="http://www.clicktorelease.com/blog/creating-spherical-environment-mapping-shader">Read the whole article here</a>. By Jaume Sanchez <a href="http://www.twitter.com/thespite">@thespite</a></p>
+			<p>Check out this more complex example using SEM and bump mapping:<br/><a href="https://www.clicktorelease.com/code/spherical-normal-mapping">Spherical Environment Mapping (MatCap/LitSphere) and Normal Mapping</a></p>
+			<p><a href="https://www.clicktorelease.com/blog/creating-spherical-environment-mapping-shader">Read the whole article here</a>. By Jaume Sanchez <a href="https://twitter.com/thespite">@thespite</a></p>
 			<p><a href="https://github.com/spite/spherical-environment-mapping" >Fork on GitHub</a></p>
 		</div>
 		<div id="options" class="ui" >
@@ -93,7 +93,7 @@
 			
 			<div class="o">
 				<input type="checkbox" id="perPixelBtn" ></input> <label for="perPixelBtn" >Enable Phong (per-pixel) shading</label>
-				<p><b>Frame time:</b> <span id="frameTime"></span></p>
+				<p><b>CPU render time:</b> <span id="frameTime"></span></p>
 			</div>
 
 		</div>
@@ -113,7 +113,7 @@
 		vec3 n = normalize( normalMatrix * normal );
 
 		vec3 r = reflect( e, n );
-		float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+		float m = 2. * sqrt( r.x * r.x + r.y * r.y + ( r.z + 1. ) * ( r.z + 1. ) );
 		vN = r.xy / m + .5;
 
 		gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
@@ -122,7 +122,7 @@
 
 </script>
 
-<script type="x-shader/x-vertex" id="sem-fs">
+<script type="x-shader/x-fragment" id="sem-fs">
 	
 	uniform sampler2D tMatCap;
 
@@ -144,7 +144,7 @@
 
 	void main() {
 
-		e = normalize( vec3( modelViewMatrix * vec4( position, 1.0 ) ) );
+		e = vec3( modelViewMatrix * vec4( position, 1.0 ) );
 		n = normalize( normalMatrix * normal );
 
 		gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1. );
@@ -153,7 +153,7 @@
 
 </script>
 
-<script type="x-shader/x-vertex" id="sem2-fs">
+<script type="x-shader/x-fragment" id="sem2-fs">
 	
 	uniform sampler2D tMatCap;
 
@@ -162,9 +162,9 @@
 
 	void main() {
 		
-		vec3 r = reflect( e, n );
+		vec3 r = reflect( normalize( e ), normalize( n ) );
 		//r = e - 2. * dot( n, e ) * n;
-		float m = 2. * sqrt( pow( r.x, 2. ) + pow( r.y, 2. ) + pow( r.z + 1., 2. ) );
+		float m = 2. * sqrt( r.x * r.x + r.y * r.y + ( r.z + 1. ) * ( r.z + 1. ) );
 		vec2 vN = r.xy / m + .5;
 
 		vec3 base = texture2D( tMatCap, vN ).rgb;
@@ -208,30 +208,22 @@
 var renderer, scene, camera, mesh, fov = 120, nfov = 25,
 container = document.getElementById( 'container' ),
 material, material2,
-onMouseDownMouseX = 0, onMouseDownMouseY = 0,
-lon = 90, nlon = 110, onMouseDownLon = 0,
-lat = 0, nlat = 17, onMouseDownLat = 0,
+lon = 90, nlon = 110,
+lat = 0, nlat = 17,
 phi = 0, theta = 0,
 isUserInteracting = false, isUserPinching = false,
 onPointerDownPointerX, onPointerDownPointerY, onPointerDownLon, onPointerDownLat;
 var noise = new ImprovedNoise();
-var perPixelMode = false, currentMaterial;
+var perPixelMode = false, currentMaterial, matCaps;
 var uiElements = Array.prototype.slice.call( document.querySelectorAll( '.ui' ) );
 
 window.addEventListener( 'load', init );
 
 var c = document.body;
 document.getElementById( 'fullscreenBtn' ).addEventListener( 'click', function( e ) {
-	c.onwebkitfullscreenchange = function(e) {
-		c.onwebkitfullscreenchange = function() {
-		};
-	};
-	c.onmozfullscreenchange = function(e) {
-		c.onmozfullscreenchange = function() {
-		};
-	};
-	if( c.webkitRequestFullScreen ) c.webkitRequestFullScreen();
-	if( c.mozRequestFullScreen ) c.mozRequestFullScreen();
+	if( c.requestFullscreen ) c.requestFullscreen();
+	else if( c.webkitRequestFullScreen ) c.webkitRequestFullScreen();
+	else if( c.mozRequestFullScreen ) c.mozRequestFullScreen();
 	e.preventDefault();
 }, false );
 
@@ -252,7 +244,7 @@ function clearMaterialButtons() {
 }
 
 document.getElementById( 'perPixelBtn' ).addEventListener( 'click', function( e ) {
-	perPixelMode = !perPixelMode;
+	perPixelMode = this.checked;
 	if( perPixelMode ){
 		currentMaterial = material2; 
 	} else {
@@ -285,30 +277,21 @@ document.getElementById( 'suzanneBtn' ).addEventListener( 'click', function( e )
 document.getElementById( 'redMaterialBtn' ).addEventListener( 'click', function( e ) {
 	clearMaterialButtons();
 	this.classList.add( 'active' );
-	material.uniforms.tMatCap.value = THREE.ImageUtils.loadTexture( 'matcap.jpg' );
-	material.uniforms.tMatCap.value.needsUpdate = true;
-	material2.uniforms.tMatCap.value = THREE.ImageUtils.loadTexture( 'matcap.jpg' );
-	material2.uniforms.tMatCap.value.needsUpdate = true;
+	material.uniforms.tMatCap.value = material2.uniforms.tMatCap.value = matCaps.red;
 	e.preventDefault();
 } );
 
 document.getElementById( 'blackMaterialBtn' ).addEventListener( 'click', function( e ) {
 	clearMaterialButtons();
 	this.classList.add( 'active' );
-	material.uniforms.tMatCap.value = THREE.ImageUtils.loadTexture( 'matcap2.jpg' );
-	material.uniforms.tMatCap.value.needsUpdate = true;
-	material2.uniforms.tMatCap.value = THREE.ImageUtils.loadTexture( 'matcap2.jpg' );
-	material2.uniforms.tMatCap.value.needsUpdate = true;
+	material.uniforms.tMatCap.value = material2.uniforms.tMatCap.value = matCaps.black;
 	e.preventDefault();
 } );
 
 document.getElementById( 'skinMaterialBtn' ).addEventListener( 'click', function( e ) {
 	clearMaterialButtons();
 	this.classList.add( 'active' );
-	material.uniforms.tMatCap.value = THREE.ImageUtils.loadTexture( 'matcap3.jpg' );
-	material.uniforms.tMatCap.value.needsUpdate = true;
-	material2.uniforms.tMatCap.value = THREE.ImageUtils.loadTexture( 'matcap3.jpg' );
-	material2.uniforms.tMatCap.value.needsUpdate = true;
+	material.uniforms.tMatCap.value = material2.uniforms.tMatCap.value = matCaps.skin;
 	e.preventDefault();
 } );
 
@@ -319,11 +302,6 @@ function createTorus() {
 }
 
 // Perlin Noise functions from Procedurally Bump-Textured Sphere http://mrl.nyu.edu/~perlin/homepage2006/bumpy/index.html
-
-function stripes( x, f) {
-	var t = .5 + .5 * Math.sin( f * 2 * Math.PI * x );
-	return t * t - .5;
-}
 
 function turbulence( x, y, z) {
 	var t = -.5;
@@ -336,14 +314,6 @@ function turbulence( x, y, z) {
 
 function crinkly( x, y, z ) {
 	return - .1 * turbulence( x, y, z );
-}
-
-function lumpy( x, y, z ) {
-	return .03 * noise.noise( 8 * x, 8 * y, 8 * z );
-}
-
-function marbled( x, y, z ) {
-	return .01 * stripes( x + 2 * turbulence( x, y, z ), 1.6 );
 }
 
 function createBlob() {
@@ -365,8 +335,6 @@ function createBlob() {
    	geometry.computeCentroids();
     geometry.computeFaceNormals();
     geometry.computeVertexNormals();
-    geometry.computeMorphNormals();
-    geometry.computeTangents();
 
 	return geometry;
 
@@ -390,11 +358,7 @@ function createSuzanne() {
     geometry.normalsNeedUpdate = true;
    	geometry.uvsNeedUpdate = true;
    	geometry.computeCentroids();
-    geometry.computeFaceNormals();
-    geometry.computeVertexNormals();
-    geometry.computeMorphNormals();
 
-	geometry.computeBoundingBox();
 	var modifier = new THREE.SubdivisionModifier( 2 );
 	modifier.modify( geometry );
 
@@ -405,7 +369,8 @@ function createSuzanne() {
 function switchMesh( f ) {
 
 	if( mesh ) scene.remove( mesh );
-	mesh = new THREE.Mesh( f(), currentMaterial );
+	if( !f.geometry ) f.geometry = f();
+	mesh = new THREE.Mesh( f.geometry, currentMaterial );
 	scene.add( mesh );
 	
 }
@@ -419,10 +384,16 @@ function init() {
 
 	scene.add( camera );
 
+	matCaps = {
+		red: THREE.ImageUtils.loadTexture( 'matcap.jpg' ),
+		black: THREE.ImageUtils.loadTexture( 'matcap2.jpg' ),
+		skin: THREE.ImageUtils.loadTexture( 'matcap3.jpg' )
+	};
+
 	material = new THREE.ShaderMaterial( {
 
 		uniforms: { 
-			tMatCap: { type: 't', value: THREE.ImageUtils.loadTexture( 'matcap3.jpg' ) },
+			tMatCap: { type: 't', value: matCaps.skin },
 		},
 		vertexShader: document.getElementById( 'sem-vs' ).textContent,
 		fragmentShader: document.getElementById( 'sem-fs' ).textContent,
@@ -436,7 +407,7 @@ function init() {
 	material2 = new THREE.ShaderMaterial( {
 
 		uniforms: { 
-			tMatCap: { type: 't', value: THREE.ImageUtils.loadTexture( 'matcap3.jpg' ) },
+			tMatCap: { type: 't', value: matCaps.skin },
 		},
 		vertexShader: document.getElementById( 'sem2-vs' ).textContent,
 		fragmentShader: document.getElementById( 'sem2-fs' ).textContent,
@@ -447,7 +418,8 @@ function init() {
 	material2.uniforms.tMatCap.value.wrapS = material2.uniforms.tMatCap.value.wrapT = 
 	THREE.ClampToEdgeWrapping;
 
-	currentMaterial = material;
+	perPixelMode = document.getElementById( 'perPixelBtn' ).checked;
+	currentMaterial = perPixelMode ? material2 : material;
 
 	renderer = new THREE.WebGLRenderer( { antialias: true } );
 	renderer.setSize( window.innerWidth, window.innerHeight );
@@ -456,9 +428,8 @@ function init() {
 
 	container.addEventListener( 'mousedown', onMouseDown, false );
 	container.addEventListener( 'mousemove', onMouseMove, false );
-	container.addEventListener( 'mouseup', onMouseUp, false );
-	container.addEventListener( 'mousewheel', onMouseWheel, false );
-	container.addEventListener( 'DOMMouseScroll', onMouseWheel, false);
+	window.addEventListener( 'mouseup', onMouseUp, false );
+	container.addEventListener( 'wheel', onMouseWheel, false );
 	container.addEventListener( 'touchstart', onTouchStart, false );
 	container.addEventListener( 'touchmove', onTouchMove, false );
 	container.addEventListener( 'touchend', onTouchEnd, false );
@@ -482,29 +453,14 @@ function onWindowResize() {
 
 function onMouseWheel( event ) {
 
-	// WebKit
+	// deltaY is in lines when deltaMode is 1 (Firefox mouse wheel), pixels otherwise
+	nfov += event.deltaY * ( event.deltaMode === 1 ? 0.4 : 0.012 );
 
-	if ( event.wheelDeltaY ) {
-
-		nfov -= event.wheelDeltaY * 0.01;
-
-	// Opera / Explorer 9
-
-	} else if ( event.wheelDelta ) {
-
-		nfov -= event.wheelDelta * 0.05;
-
-	// Firefox
-
-	} else if ( event.detail ) {
-
-		nfov += event.detail * 1.0;
-
-	}
-	
 }
 
 function onMouseDown( event ) {
+
+	if( event.button !== 0 ) return;
 
 	uiElements.forEach( function( e ) { e.classList.add( 'hidden' ); } );
 	event.preventDefault();
@@ -572,7 +528,7 @@ function onTouchStart( event ) {
 
 function onTouchMove( event ) {
 
-	if( event.touches.length == 2 ) {
+	if( event.touches.length == 2 && isUserPinching ) {
 
 		var t = event.touches;
 		var dist = Math.sqrt(
@@ -597,10 +553,21 @@ function onTouchEnd( event ) {
 
 	isUserInteracting = false;
 	isUserPinching = false;
+
+	// keep rotating from the finger that is still down
+	if( event.touches.length ) {
+
+		var t = event.touches[ 0 ];
+		onPointerDownPointerX = t.clientX;
+		onPointerDownPointerY = t.clientY;
+		onPointerDownLon = lon;
+		onPointerDownLat = lat;
+
+	}
 	
 }
 
-var perfTime, prevPerfTime = performance.now();
+var perfTime, prevPerfTime = performance.now(), frameStart = prevPerfTime;
 
 function render() {
 
@@ -609,9 +576,14 @@ function render() {
 
 	requestAnimationFrame( render );
 
-	lon += ( nlon - lon ) * .2;
-	lat += ( nlat - lat ) * .2;
-	fov += ( nfov - fov ) * .2;
+	// .2 per frame at 60Hz, same speed at any refresh rate
+	var now = performance.now();
+	var k = 1 - Math.pow( .8, Math.min( ( now - frameStart ) * .06, 2 ) );
+	frameStart = now;
+
+	lon += ( nlon - lon ) * k;
+	lat += ( nlat - lat ) * k;
+	fov += ( nfov - fov ) * k;
 
 	camera.projectionMatrix.makePerspective( fov, window.innerWidth / window.innerHeight, camera.near, camera.far );
 	
